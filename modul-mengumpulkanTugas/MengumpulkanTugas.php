@@ -50,8 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = new MengumpulkanTugas($file, $action, $dueDate, $submittedAt);
     }
 }
-
-?>
+if (php_sapi_name() !== 'cli') {
+    ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,3 +85,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php } ?>
 </body>
 </html>
+<?php
+}
