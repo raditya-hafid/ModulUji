@@ -10,7 +10,7 @@ if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
 
 $siswa = [
-    ['id' => '1', 'name' => 'Semua Siawa'],
+    ['id' => '1', 'name' => 'Semua Siswa'],
     ['id' => '2', 'name' => 'Ahmad Rizki'],
     ['id' => '3', 'name' => 'Siti Nurhaliza'],
 ];
