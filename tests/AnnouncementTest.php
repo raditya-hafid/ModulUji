@@ -6,23 +6,25 @@ use PHPUnit\Framework\TestCase;
 
 class AnnouncementTest extends TestCase
 {
+    private Announcement $announcement;
+
+    protected function setUp(): void
+    {
+        $this->announcement = new Announcement("../modul-pengumuman/announcement.json");
+    }
+
     public function testNoMessageAndNoAttachment()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
-
-        $this->assertFalse($announcement->validateMessage("") && $announcement->validateAttachment([]));
+        $this->assertFalse($this->announcement->validateMessage("") && $this->announcement->validateAttachment([]));
     }
     
     public function testNoMessageAndOneAttachment()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
-
-        $this->assertFalse($announcement->validateMessage("") && $announcement->validateAttachment(["tes"]));
+        $this->assertFalse($this->announcement->validateMessage("") && $this->announcement->validateAttachment(["tes"]));
     }
     
     public function testAttachmentLength()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
         $attachmentFiles = [
             "file1", "file2", "file3", "file4", "file5",
             "file6", "file7", "file8", "file9", "file10",
@@ -31,27 +33,23 @@ class AnnouncementTest extends TestCase
             "file21"
         ]; 
 
-        $this->assertFalse($announcement->validateAttachment($attachmentFiles));
+        $this->assertFalse($this->announcement->validateAttachment($attachmentFiles));
     }
 
     public function testScheduleMoreThan2Years()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
+        $now = time();
 
-        $this->assertFalse($announcement->validateSchedule(strtotime("2027-11-02 09:28:00")));
+        $this->assertFalse($this->announcement->validateSchedule(strtotime("+25 months", $now)));
     }
 
     public function testTeacherEmptyReply()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
-
-        $this->assertFalse($announcement->validateComment(""));
+        $this->assertFalse($this->announcement->validateComment(""));
     }
 
     public function testStudentEmptyComment()
     {
-        $announcement = new Announcement("../modul-pengumuman/announcement.json");
-
-        $this->assertFalse($announcement->validateComment(""));
+        $this->assertFalse($this->announcement->validateComment(""));
     }
 }
