@@ -122,22 +122,38 @@ class Announcement {
     }
 
     public function validateMessage(String $message) {
-        return $message !== '';
+        if ($message !== '') {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     public function validateComment(String $comment) {
-        return $comment !== '';
+        if ($comment !== '') {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function validateAttachment(Array $attachment) {
-        return count($attachment) <= 20;
+        if (count($attachment) <= 20) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function validateSchedule($schedule) {
         $now = time();
         $two_years = strtotime("+2 years", $now);
 
-        return $schedule < $two_years;
+        if ($schedule < $two_years) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function displayAnnouncement() { ?>
