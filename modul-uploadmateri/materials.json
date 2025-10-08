@@ -1,14 +1,37 @@
 [
     {
-        "id": "68de4caccddb7",
-        "title": "coba 1",
-        "description": "coba",
+        "id": "68e6820eee026",
+        "title": "materi 1",
+        "description": "ini unntuk materi satu",
         "topic": "1",
         "students": "1",
         "classes": [
+            "1"
+        ],
+        "files": [
+            {
+                "original": "Klasifikasi_Fitur_dan_User_Zenith.docx",
+                "stored": "68e6820eec405.docx"
+            }
+        ],
+        "date": "2025-10-08 22:23:58"
+    },
+    {
+        "id": "68e682e37f9bc",
+        "title": "materinya",
+        "description": "akukuku",
+        "topic": "1",
+        "students": "2",
+        "classes": [
+            "1",
             "2"
         ],
-        "files": [],
-        "date": "2025-10-02 09:58:04"
+        "files": [
+            {
+                "original": "Klasifikasi_Fitur_dan_User_Zenith.docx",
+                "stored": "virtual_68e682e37f67c.docx"
+            }
+        ],
+        "date": "2025-10-08 22:27:31"
     }
 ]

@@ -1,13 +1,93 @@
 <?php
 session_start();
 
-$uploadDir = 'uploads/';
-$dataFile = 'materials.json';
-$studentsFile = 'students.json';
-$topicsFile = 'topics.json';
+class UploadMateri
+{
+    private $uploadDir;
+    private $dataFile;
+    private $studentsFile;
+    private $topicsFile;
 
-if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+    public function __construct(
+        $uploadDir = 'uploads/',
+        $dataFile = 'materials.json',
+        $studentsFile = 'students.json',
+        $topicsFile = 'topics.json'
+    ) {
+        $this->uploadDir = $uploadDir;
+        $this->dataFile = $dataFile;
+        $this->studentsFile = $studentsFile;
+        $this->topicsFile = $topicsFile;
 
+        if (!is_dir($this->uploadDir)) mkdir($this->uploadDir, 0777, true);
+    }
+
+    private function getData($file)
+    {
+        return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : [];
+    }
+
+    private function saveData($file, $data)
+    {
+        file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    public function getAll()
+    {
+        return $this->getData($this->dataFile);
+    }
+
+    public function upload($title, $description = '', $topic_id = '', $students = '', $classes = [], $files = [])
+    {
+        $uploadedFiles = [];
+
+        if (!empty($files['name'])) {
+            foreach ($files['name'] as $i => $name) {
+                if ($files['error'][$i] === 0) {
+                    $uploadedFiles[] = [
+                        'original' => $name,
+                        'stored' => 'virtual_' . uniqid() . '.' . pathinfo($name, PATHINFO_EXTENSION)
+                    ];
+                }
+            }
+        }
+
+        $materials = $this->getData($this->dataFile);
+        $materials[] = [
+            'id' => uniqid(),
+            'title' => $title,
+            'description' => $description,
+            'topic' => $topic_id,
+            'students' => $students,
+            'classes' => $classes,
+            'files' => $uploadedFiles,
+            'date' => date('Y-m-d H:i:s')
+        ];
+
+        $this->saveData($this->dataFile, $materials);
+        return ['status' => true, 'msg' => 'Materi berhasil diupload', 'file' => $uploadedFiles];
+    }
+
+
+    public function delete($id)
+    {
+        $materials = $this->getData($this->dataFile);
+        foreach ($materials as $k => $m) {
+            if ($m['id'] === $id) {
+                foreach ($m['files'] as $f) {
+                    $filePath = $this->uploadDir . $f['stored'];
+                    if (file_exists($filePath)) unlink($filePath);
+                }
+                unset($materials[$k]);
+            }
+        }
+        $this->saveData($this->dataFile, array_values($materials));
+        return true;
+    }
+}
+
+
+$uploadMateri = new UploadMateri();
 
 $siswa = [
     ['id' => '1', 'name' => 'Semua Siswa'],
@@ -26,75 +106,32 @@ $kelas = [
     ['id' => '3', 'name' => 'TI-C'],
 ];
 
-function getData($file)
-{
-    return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : [];
-}
-
-function saveData($file, $data)
-{
-    file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'upload') {
-        $files = [];
-        if (isset($_FILES['files'])) {
-            foreach ($_FILES['files']['name'] as $i => $name) {
-                if ($_FILES['files']['error'][$i] === 0) {
-                    $newName = uniqid() . '.' . pathinfo($name, PATHINFO_EXTENSION);
-                    move_uploaded_file($_FILES['files']['tmp_name'][$i], $uploadDir . $newName);
-                    $files[] = ['original' => $name, 'stored' => $newName];
-                }
-            }
-        }
-
-        $materials = getData($dataFile);
-        $materials[] = [
-            'id' => uniqid(),
-            'title' => $_POST['title'],
-            'description' => $_POST['description'] ?? '',
-            'topic' => $_POST['topic_id'] ?? '',
-            'students' => $_POST['students'] ?? '',
-            'classes' => $_POST['classes'] ?? [],
-            'files' => $files,
-            'date' => date('Y-m-d H:i:s')
-        ];
-        saveData($dataFile, $materials);
-        $msg = 'Materi berhasil diupload';
+        $result = $uploadMateri->upload(
+            $_POST['title'],
+            $_POST['description'] ?? '',
+            $_POST['topic_id'] ?? '',
+            $_POST['students'] ?? '',
+            $_POST['classes'] ?? [],
+            $_FILES['files'] ?? []
+        );
+        $msg = $result['msg'];
     }
 
     if ($action === 'delete') {
-        $materials = getData($dataFile);
-        foreach ($materials as $k => $m) {
-            if ($m['id'] === $_POST['id']) {
-                foreach ($m['files'] as $f) unlink($uploadDir . $f['stored']);
-                unset($materials[$k]);
-            }
-        }
-        saveData($dataFile, array_values($materials));
+        $uploadMateri->delete($_POST['id']);
         $msg = 'Materi dihapus';
     }
 }
 
-if (isset($_GET['download'])) {
-    $materials = getData($dataFile);
-    foreach ($materials as $m) {
-        if ($m['id'] === $_GET['id'] && isset($m['files'][$_GET['i']])) {
-            $file = $m['files'][$_GET['i']];
-            header('Content-Disposition: attachment; filename="' . $file['original'] . '"');
-            readfile($uploadDir . $file['stored']);
-            exit;
-        }
-    }
-}
-
-$materials = getData($dataFile);
+$materials = $uploadMateri->getAll();
 $students = $siswa;
 $topics = $topik;
 ?>
+
 <!DOCTYPE html>
 <html>
 
@@ -144,7 +181,6 @@ $topics = $topik;
                 <?php endforeach; ?>
             </select>
         </p>
-
 
         <p>File: <input type="file" name="files[]" multiple></p>
 
