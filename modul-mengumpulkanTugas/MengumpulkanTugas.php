@@ -40,7 +40,7 @@ class MengumpulkanTugas
 // Bagian untuk tampilan HTML
 // ----------------------------------------------------
 $result = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'POST') {
     $action = $_POST['action'] ?? null;
     $file = $_FILES['add'] ?? null;
 
