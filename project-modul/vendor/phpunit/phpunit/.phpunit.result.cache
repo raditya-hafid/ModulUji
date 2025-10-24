@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"LoginLogoutTest::testLoginSuccess":0.006,"LoginLogoutTest::testLoginEmptyFields":0.002,"LoginLogoutTest::testLogoutSuccess":0.002}}
