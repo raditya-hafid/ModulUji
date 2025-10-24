@@ -14,7 +14,7 @@ class ReplyTest extends TestCase
         $this->announcement = new Announcement("", false);
     }
 
-    public function testStudentEmptyComment()
+    public function testTc48StudentEmptyComment()
     {
         $this->assertFalse($this->announcement->validateComment(""));
     }
