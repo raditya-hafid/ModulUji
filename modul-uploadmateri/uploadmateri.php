@@ -1,47 +1,67 @@
 <?php
 session_start();
 
+// ============================================
+// CLASS UPLOADMATERI (CLEAN & SIMPLE)
+// ============================================
 class UploadMateri
 {
     private $uploadDir;
     private $dataFile;
-    private $studentsFile;
-    private $topicsFile;
 
-    public function __construct(
-        $uploadDir = 'uploads/',
-        $dataFile = 'materials.json',
-        $studentsFile = 'students.json',
-        $topicsFile = 'topics.json'
-    ) {
+    public function __construct($uploadDir = 'uploads/', $dataFile = 'materials.json')
+    {
         $this->uploadDir = $uploadDir;
         $this->dataFile = $dataFile;
-        $this->studentsFile = $studentsFile;
-        $this->topicsFile = $topicsFile;
 
-        if (!is_dir($this->uploadDir)) mkdir($this->uploadDir, 0777, true);
+        if (!is_dir($this->uploadDir)) {
+            mkdir($this->uploadDir, 0777, true);
+        }
     }
 
-    private function getData($file)
+    private function getData()
     {
-        return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : [];
+        if (!file_exists($this->dataFile)) {
+            return [];
+        }
+        return json_decode(file_get_contents($this->dataFile), true) ?: [];
     }
 
-    private function saveData($file, $data)
+    private function saveData($data)
     {
-        file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
+        file_put_contents($this->dataFile, json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    public function validateTitle($title)
+    {
+        return !empty(trim($title));
+    }
+
+    public function validateFiles($files)
+    {
+        if (empty($files['name'][0])) {
+            return true; // File optional
+        }
+        return count($files['name']) <= 10;
     }
 
     public function getAll()
     {
-        return $this->getData($this->dataFile);
+        return $this->getData();
     }
 
     public function upload($title, $description = '', $topic_id = '', $students = '', $classes = [], $files = [])
     {
-        $uploadedFiles = [];
+        if (!$this->validateTitle($title)) {
+            return ['status' => false, 'msg' => 'Judul tidak boleh kosong'];
+        }
 
-        if (!empty($files['name'])) {
+        if (!$this->validateFiles($files)) {
+            return ['status' => false, 'msg' => 'Maksimal 10 file'];
+        }
+
+        $uploadedFiles = [];
+        if (!empty($files['name'][0])) {
             foreach ($files['name'] as $i => $name) {
                 if ($files['error'][$i] === 0) {
                     $uploadedFiles[] = [
@@ -52,7 +72,7 @@ class UploadMateri
             }
         }
 
-        $materials = $this->getData($this->dataFile);
+        $materials = $this->getData();
         $materials[] = [
             'id' => uniqid(),
             'title' => $title,
@@ -64,30 +84,37 @@ class UploadMateri
             'date' => date('Y-m-d H:i:s')
         ];
 
-        $this->saveData($this->dataFile, $materials);
+        $this->saveData($materials);
+
         return ['status' => true, 'msg' => 'Materi berhasil diupload', 'file' => $uploadedFiles];
     }
 
-
     public function delete($id)
     {
-        $materials = $this->getData($this->dataFile);
+        $materials = $this->getData();
+
         foreach ($materials as $k => $m) {
             if ($m['id'] === $id) {
-                foreach ($m['files'] as $f) {
-                    $filePath = $this->uploadDir . $f['stored'];
-                    if (file_exists($filePath)) unlink($filePath);
-                }
                 unset($materials[$k]);
+                break;
             }
         }
-        $this->saveData($this->dataFile, array_values($materials));
+
+        $this->saveData(array_values($materials));
         return true;
     }
 }
 
-
+// ============================================
+// INISIALISASI & DATA
+// ============================================
 $uploadMateri = new UploadMateri();
+
+$kelas = [
+    ['id' => '1', 'name' => 'TI-A'],
+    ['id' => '2', 'name' => 'TI-B'],
+    ['id' => '3', 'name' => 'TI-C'],
+];
 
 $siswa = [
     ['id' => '1', 'name' => 'Semua Siswa'],
@@ -100,121 +127,148 @@ $topik = [
     ['id' => '2', 'name' => 'Bab 2 - Dasar-dasar'],
 ];
 
-$kelas = [
-    ['id' => '1', 'name' => 'TI-A'],
-    ['id' => '2', 'name' => 'TI-B'],
-    ['id' => '3', 'name' => 'TI-C'],
-];
-
+// ============================================
+// PROSES REQUEST
+// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'upload') {
         $result = $uploadMateri->upload(
-            $_POST['title'],
+            $_POST['title'] ?? '',
             $_POST['description'] ?? '',
             $_POST['topic_id'] ?? '',
-            $_POST['students'] ?? '',
+            $_POST['students'] ?? '1',
             $_POST['classes'] ?? [],
             $_FILES['files'] ?? []
         );
-        $msg = $result['msg'];
+        $message = $result['msg'];
+        $messageType = $result['status'] ? 'success' : 'error';
     }
 
     if ($action === 'delete') {
         $uploadMateri->delete($_POST['id']);
-        $msg = 'Materi dihapus';
+        $message = 'Materi berhasil dihapus';
+        $messageType = 'success';
     }
 }
 
 $materials = $uploadMateri->getAll();
-$students = $siswa;
-$topics = $topik;
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Materi</title>
 </head>
 
 <body>
     <h1>Upload Materi</h1>
 
-    <?php if (isset($msg)): ?>
-        <p><b><?= $msg ?></b></p>
+    <?php if (isset($message)): ?>
+        <p><strong><?= htmlspecialchars($message) ?></strong></p>
     <?php endif; ?>
 
-    <hr>
-
-    <h2>Upload Materi</h2>
+    <h2>Upload Materi Baru</h2>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="action" value="upload">
 
-        <p>Judul: <input type="text" name="title" required></p>
-        <p>Deskripsi: <textarea name="description"></textarea></p>
+        <label>Judul:</label>
+        <input type="text" name="title" required>
+        <br><br>
 
-        <p>Untuk:</p>
+        <label>Deskripsi:</label>
+        <textarea name="description" rows="4" cols="50"></textarea>
+        <br><br>
+
+        <label>Untuk: *</label><br>
         <?php foreach ($kelas as $k): ?>
-            <label>
-                <input type="checkbox" name="classes[]" value="<?= $k['id'] ?>">
-                <?= $k['name'] ?>
-            </label><br>
+            <input type="checkbox" name="classes[]" value="<?= $k['id'] ?>" id="class_<?= $k['id'] ?>">
+            <label for="class_<?= $k['id'] ?>"><?= $k['name'] ?></label><br>
         <?php endforeach; ?>
+        <small>(Pilih minimal 1 kelas)</small>
+        <br><br>
 
-        <p>Topik:
-            <select name="topic_id">
-                <option value="">-</option>
-                <?php foreach ($topics as $t): ?>
-                    <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
-                <?php endforeach; ?>
-            </select>
-        </p>
+        <label>Topik:</label>
+        <select name="topic_id">
+            <option value="">-</option>
+            <?php foreach ($topik as $t): ?>
+                <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
+            <?php endforeach; ?>
+        </select>
+        <br><br>
 
-        <p>Tugaskan ke:
-            <select name="students" required>
-                <option value="">- Pilih Siswa -</option>
-                <?php foreach ($students as $s): ?>
-                    <option value="<?= $s['id'] ?>"><?= $s['name'] ?></option>
-                <?php endforeach; ?>
-            </select>
-        </p>
+        <label>Tugaskan ke:</label>
+        <select name="students">
+            <option value="">- Pilih Siswa -</option>
+            <?php foreach ($siswa as $s): ?>
+                <option value="<?= $s['id'] ?>"><?= $s['name'] ?></option>
+            <?php endforeach; ?>
+        </select>
+        <br><br>
 
-        <p>File: <input type="file" name="files[]" multiple></p>
+        <label>File:</label>
+        <input type="file" name="files[]" multiple>
+        <br><br>
 
-        <button>Upload</button>
+        <button type="submit">Upload</button>
     </form>
 
     <hr>
 
-    <h2>Daftar Materi</h2>
-    <?php foreach (array_reverse($materials) as $m): ?>
-        <div>
-            <h3><?= $m['title'] ?></h3>
-            <?php if ($m['description']): ?>
-                <p><?= $m['description'] ?></p>
-            <?php endif; ?>
-            <?php if (!empty($m['files'])): ?>
-                <p>File:</p>
-                <ul>
-                    <?php foreach ($m['files'] as $i => $f): ?>
-                        <li>
-                            <?= $f['original'] ?>
-                            <a href="?download=1&id=<?= $m['id'] ?>&i=<?= $i ?>">Download</a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-            <form method="POST" onsubmit="return confirm('Hapus?')">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= $m['id'] ?>">
-                <button>Hapus</button>
-            </form>
-            <hr>
-        </div>
-    <?php endforeach; ?>
+    <h2>Daftar Materi (<?= count($materials) ?>)</h2>
+
+    <?php if (empty($materials)): ?>
+        <p>Belum ada materi yang diupload</p>
+    <?php else: ?>
+        <?php foreach (array_reverse($materials) as $m): ?>
+            <div>
+                <h3><?= htmlspecialchars($m['title']) ?></h3>
+
+                <?php if (!empty($m['description'])): ?>
+                    <p><?= htmlspecialchars($m['description']) ?></p>
+                <?php endif; ?>
+
+                <?php if (!empty($m['classes'])): ?>
+                    <p><strong>Untuk kelas:</strong>
+                        <?php
+                        $kelasNames = [];
+                        foreach ($m['classes'] as $classId) {
+                            foreach ($kelas as $k) {
+                                if ($k['id'] === $classId) {
+                                    $kelasNames[] = $k['name'];
+                                }
+                            }
+                        }
+                        echo implode(', ', $kelasNames);
+                        ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php if (!empty($m['files'])): ?>
+                    <p><strong>File terlampir:</strong></p>
+                    <ul>
+                        <?php foreach ($m['files'] as $f): ?>
+                            <li><?= htmlspecialchars($f['original']) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p>Tidak ada file</p>
+                <?php endif; ?>
+
+                <p><small>Diupload: <?= $m['date'] ?></small></p>
+
+                <form method="POST" onsubmit="return confirm('Yakin ingin menghapus materi ini?')">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="<?= $m['id'] ?>">
+                    <button type="submit">Hapus</button>
+                </form>
+                <hr>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </body>
 
 </html>
