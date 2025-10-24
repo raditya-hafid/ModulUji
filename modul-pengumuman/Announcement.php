@@ -7,10 +7,12 @@ class Announcement {
     var $dataFile;
     var $announcements;
 
-    public function __construct($dataFile) {
-        $this->dataFile = $dataFile;
+    public function __construct($dataFile, bool $useRealFile = true) {
+        if ($useRealFile) {
+            $this->dataFile = $dataFile;
 
-        $this->announcements = json_decode(file_get_contents($this->dataFile), true);
+            $this->announcements = json_decode(file_get_contents($this->dataFile), true);
+        }
     }
 
     public function updateAnnouncement() {

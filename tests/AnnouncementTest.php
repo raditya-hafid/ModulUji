@@ -7,23 +7,26 @@ use PHPUnit\Framework\TestCase;
 class AnnouncementTest extends TestCase
 {
     private Announcement $announcement;
+    private $testJson = [];
 
     protected function setUp(): void
     {
-        $this->announcement = new Announcement("../modul-pengumuman/announcement.json");
+        $this->announcement = new Announcement("", false);
     }
 
-    public function testNoMessageAndNoAttachment()
+    public function testTc43NoMessageAndNoAttachment()
     {
-        $this->assertFalse($this->announcement->validateMessage("") && $this->announcement->validateAttachment([]));
+        $this->assertFalse($this->announcement->validateMessage("") && 
+            $this->announcement->validateAttachment([]));
     }
     
-    public function testNoMessageAndOneAttachment()
+    public function testTc44NoMessageAndOneAttachment()
     {
-        $this->assertFalse($this->announcement->validateMessage("") && $this->announcement->validateAttachment(["tes"]));
+        $this->assertFalse($this->announcement->validateMessage("") &&
+            $this->announcement->validateAttachment(["tes"]));
     }
     
-    public function testAttachmentLength()
+    public function testTc45AttachmentLength()
     {
         $attachmentFiles = [
             "file1", "file2", "file3", "file4", "file5",
@@ -36,19 +39,14 @@ class AnnouncementTest extends TestCase
         $this->assertFalse($this->announcement->validateAttachment($attachmentFiles));
     }
 
-    public function testScheduleMoreThan2Years()
+    public function testTc46ScheduleMoreThan2Years()
     {
         $now = time();
 
         $this->assertFalse($this->announcement->validateSchedule(strtotime("+25 months", $now)));
     }
 
-    public function testTeacherEmptyReply()
-    {
-        $this->assertFalse($this->announcement->validateComment(""));
-    }
-
-    public function testStudentEmptyComment()
+    public function testTc47TeacherEmptyReply()
     {
         $this->assertFalse($this->announcement->validateComment(""));
     }
