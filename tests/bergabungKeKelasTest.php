@@ -7,13 +7,13 @@ class BergabungKeKelasTest extends TestCase {
     public function testKodeKelasKosong() {
         $result = validasiKodeKelas("");
         $this->assertEquals("⚠️ Kode kelas tidak boleh kosong!", $result["error"]);
-        $this->assertEmpty($result["success"]);
+        $this->assertEmpty($result["Validasi kode kelas tidak boleh kosong - success"]);
     }
 
     public function testKodeKelasMengandungKarakterSpesial() {
         $result = validasiKodeKelas("abc$123");
         $this->assertEquals("⚠️ Kode kelas tidak mengandung karakter spesial!", $result["error"]);
-        $this->assertEmpty($result["success"]);
+        $this->assertEmpty($result["Validasi kode kelas mengandung karakter spesial - success"]);
     }
 
     public function testKodeKelasTerlaluPendek() {
