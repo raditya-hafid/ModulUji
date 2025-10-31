@@ -10,8 +10,8 @@ class MengumpulkanTugasTest extends TestCase
     public function testTurnInWithFile()
     {
         $file = ['name' => 'jawaban.docx', 'error' => 0];
-        $dueDate = strtotime('2025-10-02 12:00:00');
-        $submittedAt = strtotime('2025-10-02 11:00:00');
+        $dueDate = time() + 3600; // deadline 1 jam ke depan
+        $submittedAt = time(); // sekarang
 
         $task = new MengumpulkanTugas($file, 'turn_in', $dueDate, $submittedAt);
 
@@ -28,12 +28,12 @@ class MengumpulkanTugasTest extends TestCase
         $this->assertEquals('❌ Tidak ada tugas yang dilampirkan', $task->message);
     }
 
-    // ✅ Test status pengumpulan terlambat
+    // ✅ Test status pengumpulan terlambat (dinamis)
     public function testLateSubmission()
     {
         $file = ['name' => 'jawaban.pdf', 'error' => 0];
-        $dueDate = strtotime('2025-10-02 12:00:00');
-        $submittedAt = strtotime('2025-10-02 13:00:00');
+        $dueDate = time() - 60; // deadline lewat 1 menit
+        $submittedAt = time(); // sekarang
 
         $task = new MengumpulkanTugas($file, 'turn_in', $dueDate, $submittedAt);
 
